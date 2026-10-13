@@ -1,5 +1,8 @@
-import re
+from html import escape
+
+import numpy as np
 import pandas as pd
+import re
 import streamlit as st
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -11,26 +14,62 @@ from sklearn.preprocessing import StandardScaler
 st.set_page_config(page_title="Mobile Price Predictor", page_icon="📱", layout="centered")
 
 LABELS = {0: "Low Cost", 1: "Medium Cost", 2: "High Cost", 3: "Very High Cost"}
-COLORS = {0: "#22c55e", 1: "#3b82f6", 2: "#f59e0b", 3: "#ef4444"}
-ICONS = {0: "💚", 1: "💙", 2: "🧡", 3: "🔥"}
-DEFAULT_BANDS = {0: (5000, 10000), 1: (10000, 20000), 2: (20000, 35000), 3: (35000, 60000)}
+GRAD = {0: ("#16a34a", "#15803d"), 1: ("#2563eb", "#1d4ed8"), 2: ("#d97706", "#b45309"), 3: ("#dc2626", "#b91c1c")}
+DEFAULT_BANDS = {0: (5000, 10000), 1: (10000, 20000), 2: (20000, 35000), 3: (35000, 90000)}
 BOOL_COLS = ["blue", "wifi", "dual_sim", "three_g", "four_g", "touch_screen"]
 
+# ---------- styling ----------
 st.markdown(
     """
     <style>
-    .block-container {padding-top: 1.5rem; max-width: 780px;}
-    .hero {background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%);
-           padding: 1.6rem 1.4rem; border-radius: 18px; color: white; margin-bottom: 1rem;}
-    .hero h1 {margin: 0; font-size: 1.7rem; color: white;}
-    .hero p {margin: .4rem 0 0 0; opacity: .92; font-size: .95rem;}
-    .chip {display: inline-block; background: rgba(255,255,255,.2); padding: 3px 11px;
-           border-radius: 20px; font-size: .78rem; margin: 10px 6px 0 0;}
-    .result {border-radius: 18px; padding: 1.4rem; text-align: center; color: white; margin: .6rem 0 1rem 0;}
-    .result .small {font-size: .82rem; opacity: .92; letter-spacing: .08em; text-transform: uppercase;}
-    .result .price {font-size: 2.3rem; font-weight: 800; margin: .15rem 0;}
-    .result .band {font-size: 1rem; font-weight: 600;}
-    div.stButton > button {border-radius: 12px; font-weight: 600; padding: .6rem 1rem;}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    html, body, [class*="css"], button, input {font-family: 'Inter', sans-serif;}
+    #MainMenu, footer {visibility: hidden;}
+    .block-container {padding-top: 1.2rem; padding-bottom: 3rem; max-width: 780px;}
+
+    .hero {background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #4338ca 100%);
+           border-radius: 20px; padding: 1.5rem 1.4rem; color: #fff; margin-bottom: 1.1rem;
+           box-shadow: 0 10px 30px rgba(67,56,202,.25);}
+    .hero .eyebrow {font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; opacity: .65; font-weight: 600;}
+    .hero h1 {font-size: 1.7rem; font-weight: 800; margin: .3rem 0 .4rem 0; padding: 0; color: #fff; letter-spacing: -.02em;}
+    .hero p {margin: 0; font-size: .92rem; opacity: .82; line-height: 1.45;}
+
+    .stTabs [data-baseweb="tab-list"] {gap: 2px;}
+    .stTabs [data-baseweb="tab"] {padding: 8px 12px; font-weight: 600; font-size: .86rem;}
+
+    .sec {font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+          opacity: .6; margin: 1.2rem 0 .45rem 0;}
+
+    div.stButton > button, div.stDownloadButton > button {border-radius: 12px; font-weight: 600; padding: .55rem 1rem;}
+    div.stButton > button[kind="primary"] {background: #4f46e5; border: 0; color: #fff;}
+    div.stButton > button[kind="primary"]:hover {background: #4338ca; color: #fff;}
+    div[data-testid="stExpander"] {border-radius: 14px;}
+    div[data-testid="stVerticalBlockBorderWrapper"] {border-radius: 14px;}
+
+    .result {border-radius: 20px; padding: 1.5rem 1.2rem; text-align: center; color: #fff; margin: .8rem 0 .4rem 0;
+             box-shadow: 0 10px 28px rgba(0,0,0,.18);}
+    .result .eyebrow {font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; opacity: .85; font-weight: 600;}
+    .result .price {font-size: 2.6rem; font-weight: 800; letter-spacing: -.02em; margin: .15rem 0 .3rem 0;}
+    .result .badge {display: inline-block; background: rgba(255,255,255,.2); padding: 4px 14px; border-radius: 999px;
+                    font-weight: 600; font-size: .9rem;}
+    .result .sub {margin-top: .7rem; font-size: .85rem; opacity: .9;}
+
+    .pb {display: flex; align-items: center; gap: 10px; margin: 7px 0; font-size: .85rem;}
+    .pb .l {width: 112px; opacity: .85;}
+    .pb .t {flex: 1; height: 8px; border-radius: 99px; background: rgba(128,128,128,.2); overflow: hidden;}
+    .pb .t > div {height: 100%; border-radius: 99px;}
+    .pb .v {width: 50px; text-align: right; font-weight: 600;}
+
+    .pc {border: 1px solid rgba(128,128,128,.25); border-radius: 14px; padding: .85rem 1rem; margin: .55rem 0;
+         background: rgba(128,128,128,.05);}
+    .pc .top {display: flex; justify-content: space-between; align-items: baseline; gap: 10px;}
+    .pc .nm {font-weight: 700; font-size: .98rem;}
+    .pc .pr {font-weight: 800; color: #6366f1; white-space: nowrap;}
+    .pc .chip {display: inline-block; padding: 2px 9px; border-radius: 999px; background: rgba(99,102,241,.13);
+               font-size: .73rem; margin: 7px 5px 0 0; font-weight: 500;}
+    .pc .bar {height: 6px; border-radius: 99px; background: rgba(128,128,128,.2); overflow: hidden; margin-top: 10px;}
+    .pc .bar > div {height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7);}
+    .pc .why {font-size: .75rem; opacity: .68; margin-top: 6px;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -47,9 +86,9 @@ def inr(n):
 
 
 # --- catalog helpers start ---
-NUM_COLS = ["price_inr", "ram_gb", "storage_gb", "battery_mah", "charging_w", "rear_mp", "front_mp", "display_in"]
-DIM_NAMES = {"perf": "performance (RAM & storage)", "batt": "battery & charging",
-             "cam": "camera (MP-based)", "disp": "display size", "cheap": "lower price"}
+NUM_COLS = ["price_inr", "ram_gb", "storage_gb", "battery_mah", "charging_w", "rear_mp", "front_mp", "display_in", "antutu"]
+DIM_NAMES = {"perf": "performance", "batt": "battery & charging", "cam": "camera MP",
+             "disp": "display size", "cheap": "low price"}
 W_KEYS = {"perf": "w_perf", "batt": "w_batt", "cam": "w_cam", "disp": "w_disp", "cheap": "w_price"}
 
 
@@ -66,32 +105,45 @@ def get_catalog():
     return cat if cat is not None else load_catalog()
 
 
-def fmt(v, suffix=""):
-    return "-" if pd.isna(v) else f"{v:g}{suffix}"
+def fmt(v, suffix="", comma=False):
+    if pd.isna(v):
+        return "-"
+    return (f"{v:,.0f}" if comma else f"{v:g}") + suffix
 
 
 def score_catalog(cat):
-    """Spec-based score. Missing values are filled with the column median."""
+    """Spec-based score. Missing values are filled with the column median ONLY for scoring;
+    the raw values are kept for display."""
     d = cat.copy()
+    if "antutu" not in d.columns:
+        d["antutu"] = np.nan
     for c in NUM_COLS:
         d[c] = pd.to_numeric(d[c], errors="coerce")
-        d[c] = d[c].fillna(d[c].median()).fillna(0)
+    f = d[NUM_COLS].apply(lambda s: s.fillna(s.median())).fillna(0)
+    f["price_inr"] = np.log(f["price_inr"].clip(lower=1))
 
     def nz(s):
         rng = s.max() - s.min()
         return (s - s.min()) / rng if rng > 0 else s * 0 + 0.5
 
-    d["perf"] = 0.6 * nz(d["ram_gb"]) + 0.4 * nz(d["storage_gb"])
-    d["batt"] = 0.7 * nz(d["battery_mah"]) + 0.3 * nz(d["charging_w"])
-    d["cam"] = 0.5 * nz(d["rear_mp"]) + 0.5 * nz(d["front_mp"])
-    d["disp"] = nz(d["display_in"])
-    d["cheap"] = 1 - nz(d["price_inr"])
+    d["perf"] = 0.6 * nz(f["antutu"]) + 0.25 * nz(f["ram_gb"]) + 0.15 * nz(f["storage_gb"])
+    d["batt"] = 0.7 * nz(f["battery_mah"]) + 0.3 * nz(f["charging_w"])
+    d["cam"] = 0.5 * nz(f["rear_mp"]) + 0.5 * nz(f["front_mp"])
+    d["disp"] = nz(f["display_in"])
+    d["cheap"] = 1 - nz(f["price_inr"])
+
     w = {k: st.session_state.get(v, 3) for k, v in W_KEYS.items()}
     tot = sum(w.values()) or 1
     d["score"] = 100 * sum(w[k] * d[k] for k in w) / tot
-    d["why"] = d.apply(
-        lambda r: " & ".join(DIM_NAMES[k] for k in sorted(w, key=lambda k: -w[k] * r[k])[:2]), axis=1
-    )
+
+    known = {"perf": pd.Series(True, index=d.index), "cheap": pd.Series(True, index=d.index),
+             "batt": d["battery_mah"].notna(), "cam": d["rear_mp"].notna() & d["front_mp"].notna(),
+             "disp": d["display_in"].notna()}
+    d["why"] = [
+        " & ".join(DIM_NAMES[k] for k in sorted([k for k in w if known[k][i] and w[k] > 0],
+                                                key=lambda k: -w[k] * d.at[i, k])[:2]) or "overall balance"
+        for i in d.index
+    ]
     d["name"] = d["brand"] + " " + d["model"]
     return d
 # --- catalog helpers end ---
@@ -132,7 +184,6 @@ except FileNotFoundError:
 
 df, columns, scaler = T["df"], T["columns"], T["scaler"]
 model = T["models"]["Logistic Regression"]
-acc = T["scores"]["Logistic Regression"]
 
 # ---------- presets & state ----------
 PRESETS = {
@@ -171,14 +222,27 @@ def estimate_price(probs):
     return sum(probs[i] * (b[i][0] + b[i][1]) / 2 for i in range(4))
 
 
+def sec(text):
+    st.markdown(f'<div class="sec">{text}</div>', unsafe_allow_html=True)
+
 
 def phone_card(r, rank=None):
-    with st.container(border=True):
-        title = f"**{'#' + str(rank) + ' ' if rank else ''}{r['name']}** · {inr(r['price_inr'])}"
-        st.markdown(title)
-        st.caption(f"{fmt(r['ram_gb'], 'GB')} RAM / {fmt(r['storage_gb'], 'GB')} · {fmt(r['battery_mah'], ' mAh')} · "
-                   f"{fmt(r['charging_w'], 'W')} · {r['chipset']}")
-        st.progress(min(max(float(r["score"]) / 100, 0.0), 1.0), text=f"Match score {r['score']:.0f}/100 · strong in {r['why']}")
+    chips = [f"{fmt(r['ram_gb'])} GB RAM", f"{fmt(r['storage_gb'])} GB storage", f"{fmt(r['battery_mah'])} mAh",
+             f"{fmt(r['charging_w'])} W", escape(str(r["chipset"]))]
+    chips_html = "".join(f'<span class="chip">{c}</span>' for c in chips)
+    pct = min(max(float(r["score"]), 0), 100)
+    prefix = f"#{rank} " if rank else ""
+    st.markdown(
+        f"""
+        <div class="pc">
+          <div class="top"><span class="nm">{prefix}{escape(str(r['name']))}</span><span class="pr">{inr(r['price_inr'])}</span></div>
+          <div>{chips_html}</div>
+          <div class="bar"><div style="width:{pct:.0f}%"></div></div>
+          <div class="why">Match score {pct:.0f}/100 · strong in {escape(str(r['why']))}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def phones_near(lo, hi, est):
@@ -196,13 +260,11 @@ def phones_near(lo, hi, est):
 
 # ---------- header ----------
 st.markdown(
-    f"""
+    """
     <div class="hero">
-        <h1>📱 Mobile Price Predictor</h1>
-        <p>Enter a phone's specifications and get its price segment with an estimated price in ₹.</p>
-        <span class="chip">Logistic Regression</span>
-        <span class="chip">{acc:.1f}% test accuracy</span>
-        <span class="chip">{len(df)} phones · 20 features</span>
+        <div class="eyebrow">Machine Learning · Price Intelligence</div>
+        <h1>Mobile Price Predictor</h1>
+        <p>Enter a phone's specifications to predict its price segment and estimated price, then find the best phones in India for that budget.</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -214,12 +276,13 @@ tab_pred, tab_phones, tab_batch, tab_insights, tab_models, tab_about = st.tabs(
 
 # ================= PREDICT =================
 with tab_pred:
-    st.caption("Quick start - load a sample phone, then tweak the specs:")
+    sec("Quick start")
     p1, p2, p3 = st.columns(3)
     p1.button("💰 Budget", on_click=load_preset, args=("Budget",), use_container_width=True)
     p2.button("📱 Mid-range", on_click=load_preset, args=("Mid-range",), use_container_width=True)
     p3.button("🚀 Flagship", on_click=load_preset, args=("Flagship",), use_container_width=True)
 
+    sec("Specifications")
     with st.expander("⚙️ Performance & Memory", expanded=True):
         c1, c2 = st.columns(2)
         c1.slider("Battery Power (mAh)", 500, 2000, key="battery_power")
@@ -250,15 +313,14 @@ with tab_pred:
         c2.toggle("Touch Screen", key="touch_screen")
 
     with st.expander("💱 Price band settings (₹)"):
-        st.caption(
-            "The dataset only has price classes 0-3, not real prices. "
-            "These ₹ bands are my assumption for each class - edit them to match the market you want."
-        )
+        st.caption("The training dataset has price classes 0-3, not real prices. "
+                   "These ₹ bands are an assumption for each class - edit them to match the market you want.")
         for i in range(4):
             a, b = st.columns(2)
             a.number_input(f"{LABELS[i]} - min (₹)", 0, 500000, step=1000, key=f"lo{i}")
             b.number_input(f"{LABELS[i]} - max (₹)", 0, 500000, step=1000, key=f"hi{i}")
 
+    st.write("")
     if st.button("Predict Price", type="primary", use_container_width=True):
         values = {c: st.session_state[c] for c in columns}
         for k in BOOL_COLS:
@@ -270,37 +332,42 @@ with tab_pred:
         probs = model.predict_proba(scaled)[0]
         est = estimate_price(probs)
         lo, hi = bands()[pred]
+        g1, g2 = GRAD[pred]
 
         st.markdown(
             f"""
-            <div class="result" style="background:{COLORS[pred]};">
-                <div class="small">Estimated price</div>
+            <div class="result" style="background: linear-gradient(135deg, {g1}, {g2});">
+                <div class="eyebrow">Estimated price</div>
                 <div class="price">{inr(est)}</div>
-                <div class="band">{ICONS[pred]} {LABELS[pred]} · likely {inr(lo)} - {inr(hi)}</div>
-                <div class="small" style="margin-top:.5rem;">Class {pred} · {probs[pred]*100:.1f}% confidence</div>
+                <span class="badge">{LABELS[pred]}</span>
+                <div class="sub">Likely range {inr(lo)} - {inr(hi)} · {probs[pred] * 100:.0f}% confidence</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
         st.caption("Indicative estimate: probability-weighted mid-point of the ₹ bands set above.")
 
-        st.write("**Probability for each class**")
-        for i in range(4):
-            st.progress(float(probs[i]), text=f"{LABELS[i]} - {probs[i]*100:.1f}%")
+        sec("Class probabilities")
+        bars = "".join(
+            f'<div class="pb"><span class="l">{LABELS[i]}</span><span class="t"><div style="width:{probs[i] * 100:.1f}%;'
+            f'background:{GRAD[i][0]}"></div></span><span class="v">{probs[i] * 100:.1f}%</span></div>'
+            for i in range(4)
+        )
+        st.markdown(bars, unsafe_allow_html=True)
 
         near, near_note = phones_near(lo, hi, est)
         if near is not None:
-            st.write("**📱 Phones available in India around this price**")
+            sec("Phones in India around this price")
             if near_note:
                 st.caption(near_note)
             for n, (_, r) in enumerate(near.iterrows(), 1):
                 phone_card(r, n)
             st.caption("Ranked with the priorities set in the Phones tab. Prices are approximate (Oct 2026).")
 
-        st.write("**Why this prediction?** Features pushing the phone towards this class")
+        sec("Why this prediction?")
         contrib = pd.Series(scaled[0] * model.coef_[pred], index=columns).sort_values(key=abs, ascending=False).head(6)
         st.bar_chart(contrib)
-        st.caption("Positive = pushes towards the predicted class, negative = pushes away (scaled coefficient × scaled value).")
+        st.caption("Positive = pushes towards the predicted class, negative = pushes away.")
 
         st.session_state.history.append(
             {"RAM": values["ram"], "Battery": values["battery_power"], "Storage": values["int_memory"],
@@ -308,8 +375,7 @@ with tab_pred:
         )
 
     if st.session_state.history:
-        st.markdown("---")
-        st.write("**Prediction history (this session)**")
+        sec("Prediction history (this session)")
         hist = pd.DataFrame(st.session_state.history)
         st.dataframe(hist, use_container_width=True, hide_index=True)
         h1, h2 = st.columns(2)
@@ -329,13 +395,14 @@ with tab_phones:
 
         with t_rec:
             st.write("Tell me your budget and what matters most - I'll rank phones available in India.")
-            b_lo, b_hi = st.slider("Budget (₹)", 10000, 60000, (15000, 40000), step=1000)
+            b_lo, b_hi = st.slider("Budget (₹)", 5000, 100000, (15000, 40000), step=1000)
+            sec("What matters to you? (0 = ignore, 5 = very important)")
             c1, c2 = st.columns(2)
             c1.slider("Performance", 0, 5, key="w_perf")
             c2.slider("Battery & charging", 0, 5, key="w_batt")
             c1.slider("Camera", 0, 5, key="w_cam")
             c2.slider("Display size", 0, 5, key="w_disp")
-            c1.slider("Lower price", 0, 5, key="w_price")
+            c1.slider("Low price", 0, 5, key="w_price")
 
             scored = score_catalog(cat)
             pool = scored[(scored["price_inr"] >= b_lo) & (scored["price_inr"] <= b_hi)].sort_values("score", ascending=False)
@@ -346,14 +413,14 @@ with tab_phones:
                 for n, (_, r) in enumerate(pool.head(3).iterrows(), 1):
                     phone_card(r, n)
                 if len(pool) > 3:
-                    with st.expander("See the full ranking"):
+                    with st.expander(f"See the full ranking ({len(pool)} phones)"):
                         show = pool[["name", "price_inr", "score"]].copy()
                         show["price_inr"] = show["price_inr"].map(inr)
                         show["score"] = show["score"].round(1)
                         st.dataframe(show.rename(columns={"name": "Phone", "price_inr": "Price", "score": "Score"}),
                                      use_container_width=True, hide_index=True)
-            st.caption("Score is spec-based (RAM, storage, battery, charging, camera MP, display size, price). "
-                       "Megapixels do not measure camera quality, so read reviews before buying.")
+            st.caption("Score is spec-based: AnTuTu benchmark (where available), RAM, storage, battery, charging, camera MP, "
+                       "display size and price. Megapixels do not measure camera quality, so read reviews before buying.")
 
         with t_cmp:
             names = cat["brand"] + " " + cat["model"]
@@ -367,26 +434,30 @@ with tab_phones:
                     "Price": raw["price_inr"].map(lambda v: "-" if pd.isna(v) else inr(v)),
                     "RAM": raw["ram_gb"].map(lambda v: fmt(v, " GB")),
                     "Storage": raw["storage_gb"].map(lambda v: fmt(v, " GB")),
+                    "Chipset": raw["chipset"].astype(str),
+                    "AnTuTu": raw["antutu"].map(lambda v: fmt(v, "", True)) if "antutu" in raw else "-",
                     "Battery": raw["battery_mah"].map(lambda v: fmt(v, " mAh")),
                     "Charging": raw["charging_w"].map(lambda v: fmt(v, " W")),
                     "Rear camera": raw["rear_mp"].map(lambda v: fmt(v, " MP")),
                     "Front camera": raw["front_mp"].map(lambda v: fmt(v, " MP")),
                     "Display": raw["display_in"].map(lambda v: fmt(v, '"')),
-                    "Chipset": raw["chipset"].astype(str),
                     "Overall score": sc["score"].map(lambda v: f"{v:.0f}/100"),
                 }
                 st.dataframe(pd.DataFrame(rows).T, use_container_width=True)
 
                 best = []
                 for label, col, hi_better in [("Cheapest", "price_inr", False), ("Biggest battery", "battery_mah", True),
-                                              ("Fastest charging", "charging_w", True), ("Most RAM", "ram_gb", True)]:
+                                              ("Fastest charging", "charging_w", True), ("Most RAM", "ram_gb", True),
+                                              ("Best benchmark", "antutu", True)]:
+                    if col not in raw:
+                        continue
                     s = pd.to_numeric(raw[col], errors="coerce").dropna()
                     if not s.empty:
                         best.append(f"**{label}:** {(s.idxmax() if hi_better else s.idxmin())}")
-                st.markdown(" · ".join(best))
+                st.markdown("  \n".join(best))
                 st.success(f"Highest overall score: {sc['score'].idxmax()}")
 
-                st.write("**Score breakdown (0-100)**")
+                sec("Score breakdown (0-100)")
                 st.bar_chart((sc[["perf", "batt", "cam", "disp", "cheap"]] * 100).rename(
                     columns={"perf": "Performance", "batt": "Battery", "cam": "Camera", "disp": "Display", "cheap": "Price"}).T)
 
@@ -398,7 +469,8 @@ with tab_phones:
             up_cat = d2.file_uploader("Replace with your CSV", type="csv", label_visibility="collapsed")
             if up_cat is not None:
                 new = pd.read_csv(up_cat)
-                need = ["brand", "model", "price_inr"] + NUM_COLS[1:] + ["chipset"]
+                need = ["brand", "model", "price_inr", "ram_gb", "storage_gb", "battery_mah", "charging_w",
+                        "rear_mp", "front_mp", "display_in", "chipset"]
                 miss = [c for c in need if c not in new.columns]
                 if miss:
                     st.error("Missing columns: " + ", ".join(miss))
@@ -466,20 +538,20 @@ with tab_insights:
     m2.metric("Features", len(columns))
     m3.metric("Missing values", int(df.isna().sum().sum()))
 
-    st.write("**Class distribution**")
+    sec("Class distribution")
     st.bar_chart(df["price_range"].map(LABELS).value_counts())
 
-    st.write("**Average specs per price class**")
+    sec("Average specs per price class")
     avg = df.groupby("price_range")[["ram", "battery_power", "int_memory", "px_height", "px_width"]].mean().round(0)
     avg.index = [LABELS[i] for i in avg.index]
     st.dataframe(avg, use_container_width=True)
 
-    st.write("**Correlation of each feature with price range**")
+    sec("Correlation of each feature with price range")
     corr = df.corr()["price_range"].drop("price_range").sort_values(ascending=False)
     st.bar_chart(corr)
     st.caption("RAM is by far the strongest (~0.92); Bluetooth, WiFi, Dual SIM and Touch Screen are almost zero.")
 
-    st.write("**Top 10 features in the Logistic Regression model**")
+    sec("Top 10 features in the Logistic Regression model")
     imp = pd.Series(abs(model.coef_).mean(axis=0), index=columns).sort_values(ascending=False).head(10)
     st.bar_chart(imp)
 
@@ -492,16 +564,16 @@ with tab_models:
     comp = pd.Series(T["scores"], name="Accuracy (%)").round(2).sort_values(ascending=False)
     st.bar_chart(comp)
     best = comp.index[0]
-    st.success(f"Best model: {best} ({comp.iloc[0]:.2f}%)")
+    st.success(f"Best model: {best} ({comp.iloc[0]:.2f}% accuracy) - used for all predictions in this app.")
 
     pick = st.selectbox("Inspect a model", list(T["models"].keys()))
     names = [LABELS[i] for i in range(4)]
     cm = pd.DataFrame(confusion_matrix(T["y_test"], T["preds"][pick]),
                       index=[f"Actual {n}" for n in names], columns=[f"Pred {n}" for n in names])
-    st.write("**Confusion matrix**")
+    sec("Confusion matrix")
     st.dataframe(cm, use_container_width=True)
     rep = pd.DataFrame(classification_report(T["y_test"], T["preds"][pick], output_dict=True)).T.round(2)
-    st.write("**Classification report**")
+    sec("Classification report")
     st.dataframe(rep, use_container_width=True)
 
 # ================= ABOUT =================
@@ -522,7 +594,9 @@ with tab_about:
         The ₹ figure maps each class to an editable price band and weights it by the model's class probabilities,
         so it is an indicative estimate, not a true regression output.
 
-        **Phone recommendations:** a hand-collected catalog of phones sold in India (`phones.csv`, approximate Oct 2026 prices) is ranked with a transparent spec-based score using the priorities you choose. It is separate from the ML model, which was trained on a different dataset.
+        **Phone recommendations:** a hand-collected catalog of phones sold in India (`phones.csv`, approximate Oct 2026 prices)
+        is ranked with a transparent spec-based score using the priorities you choose. It is separate from the ML model,
+        which was trained on a different dataset.
 
         **Tech stack:** Python · Pandas · Scikit-learn · Streamlit
 

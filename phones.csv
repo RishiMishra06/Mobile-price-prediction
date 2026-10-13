@@ -1,18 +1,55 @@
-brand,model,price_inr,ram_gb,storage_gb,battery_mah,charging_w,rear_mp,front_mp,display_in,chipset,source
-Tecno,Camon 50 Ultra,39999,8,256,6500,45,50,50,6.78,Dimensity 7400 Ultimate,91mobiles (Oct 2026)
-Motorola,Edge 70 Pro 5G,39999,8,256,6500,90,50,50,6.8,Dimensity 8500 Extreme,91mobiles (Oct 2026)
-Infinix,Note 60 Pro 5G,32330,8,128,6500,90,50,13,6.78,Snapdragon 7s Gen 4,91mobiles (Oct 2026)
-Samsung,Galaxy A37 5G,39999,8,128,5000,45,50,12,6.7,Exynos 1480,91mobiles (Oct 2026)
-vivo,T5 Pro,38699,8,128,9020,90,50,32,6.83,Snapdragon 7s Gen 4,91mobiles (Oct 2026)
-vivo,T5 5G,34999,6,128,7050,44,50,32,6.83,Dimensity 7500 Turbo,91mobiles (Oct 2026)
-iQOO,Z11 5G,34999,6,128,7050,44,50,32,6.83,Dimensity 7500 Turbo,91mobiles (Oct 2026)
-Nothing,Phone (3a),32999,8,128,5000,50,50,32,6.77,Snapdragon 7s Gen 3,91mobiles (Oct 2026)
-realme,P4s 5G,32999,8,128,8000,80,50,16,6.78,Dimensity 7400 Ultra,91mobiles (Oct 2026)
-OnePlus,Nord CE 6 5G,34999,8,128,8000,80,50,32,6.78,Snapdragon 7s Gen 4,91mobiles + mysmartprice (Oct 2026)
-realme,P3 5G,15999,6,128,6000,45,,,6.67,Snapdragon 6 Gen 4,smartprix
-POCO,X7 5G,19999,8,256,5500,45,,,,Dimensity 7300 Ultra,smartprix (price differs on other sites)
-Samsung,Galaxy F17 5G,19499,6,128,5000,25,,,,Exynos 1330,smartprix
-Samsung,Galaxy F70e 5G,18499,6,128,6000,25,,,,Dimensity 6300,smartprix
-Infinix,Note 40X 5G,15999,12,256,5000,18,,,,Dimensity 6300,smartprix
-Mivi,One 5G,14999,8,128,6000,,50,8,6.75,Snapdragon 4 Gen 2,smartprix
-Ai+,Nova 2 Power 5G,16999,6,128,7000,33,,,6.75,Dimensity 7100,smartprix
+brand,model,price_inr,ram_gb,storage_gb,battery_mah,charging_w,rear_mp,front_mp,display_in,chipset,antutu,source
+Apple,iPhone 17,82900,8,256,3692,40,48,18,6.3,Apple A19,2250422,91mobiles (Oct 2026)
+Samsung,Galaxy S26,89999,12,256,4300,25,50,12,6.3,Exynos 2600,3113347,91mobiles (Oct 2026)
+vivo,X300 FE,94999,12,256,6500,90,50,50,6.31,Snapdragon 8 Gen 5,3000897,91mobiles (Oct 2026)
+OnePlus,15,81999,12,256,7300,120,50,32,6.78,Snapdragon 8 Elite Gen 5,3615565,91mobiles (Oct 2026)
+vivo,V80 5G,62000,8,128,7200,90,50,50,6.59,Snapdragon 7 Gen 4,1356175,91mobiles (Oct 2026)
+Tecno,Camon 50 Ultra,39999,8,256,6500,45,50,50,6.78,Dimensity 7400 Ultimate,998070,91mobiles (Oct 2026)
+Motorola,Edge 70 Pro 5G,39999,8,256,6500,90,50,50,6.8,Dimensity 8500 Extreme,2194258,91mobiles (Oct 2026)
+Samsung,Galaxy A37 5G,39999,8,128,5000,45,50,12,6.7,Exynos 1480,1053896,91mobiles (Oct 2026)
+Xiaomi,Redmi Note 17 Pro 5G,36998,8,128,9000,67,50,16,6.83,Snapdragon 6s Gen 4,949300,91mobiles (Oct 2026)
+vivo,T5 Pro,38699,8,128,9020,90,50,32,6.83,Snapdragon 7s Gen 4,1167242,91mobiles (Oct 2026)
+vivo,T5 5G,34999,6,128,7050,44,50,32,6.83,Dimensity 7500 Turbo,1107676,91mobiles (Oct 2026)
+iQOO,Z11 5G,34999,6,128,7050,44,50,32,6.83,Dimensity 7500 Turbo,1099769,91mobiles (Oct 2026)
+OnePlus,Nord CE 6 5G,34999,8,128,8000,80,50,32,6.78,Snapdragon 7s Gen 4,,91mobiles + mysmartprice (Oct 2026)
+realme,P4s 5G,32999,8,128,8000,80,50,16,6.78,Dimensity 7400 Ultra,973111,91mobiles (Oct 2026)
+Infinix,Note 60 Pro 5G,32330,8,128,6500,90,50,13,6.78,Snapdragon 7s Gen 4,1064913,91mobiles (Oct 2026)
+Motorola,Edge 70 Fusion,29749,8,128,7000,68,50,32,6.8,Snapdragon 7s Gen 4,1149292,91mobiles (Oct 2026)
+Tecno,Pova 8 5G,29999,6,128,8000,45,50,13,6.76,Dimensity 7100,757391,91mobiles (Oct 2026)
+Xiaomi,Redmi Note 15,28999,8,128,5520,45,108,20,6.77,Snapdragon 6 Gen 3,,91mobiles + mysmartprice (Oct 2026)
+vivo,V50e,28999,8,256,5600,90,50,50,6.77,Dimensity 7300,688905,91mobiles (Oct 2026)
+iQOO,Z11xa 5G,28998,8,128,7200,44,50,32,6.76,Dimensity 7400 Turbo,,91mobiles (Oct 2026)
+Xiaomi,Redmi Note 17 5G,27999,6,128,8000,45,50,8,6.99,Snapdragon 4 Gen 4,622466,91mobiles (Oct 2026)
+Moto,g max 5G,27999,6,128,7000,30,50,32,6.72,Snapdragon 6s Gen 4,807683,91mobiles (Oct 2026)
+realme,15T,26999,12,256,7000,60,50,50,6.57,Dimensity 6400 Max,448625,91mobiles (Oct 2026)
+Moto,G67 Power,26390,12,256,7000,30,50,32,6.7,Snapdragon 7s Gen 2,851360,91mobiles (Oct 2026)
+POCO,X7 Pro,25999,12,256,6550,90,50,20,6.67,Dimensity 8400 Ultra,1577069,91mobiles (Oct 2026)
+OPPO,K14 Plus 5G,25999,6,128,8000,45,50,16,6.78,Dimensity 7360 Max,951668,91mobiles (Oct 2026)
+OPPO,F31 Pro,25999,8,128,7000,80,50,32,6.57,Dimensity 7300 Energy,,91mobiles (Oct 2026)
+OnePlus,Nord CE 6 Lite 5G,25999,8,256,7000,45,50,8,6.72,Dimensity 7400 Apex,1015733,91mobiles (Oct 2026)
+iQOO,Z9s,25990,8,128,5500,44,50,16,6.77,Dimensity 7300,702347,91mobiles (Oct 2026)
+Samsung,Galaxy F70 Pro 5G,25599,6,128,6000,45,50,12,6.7,Snapdragon 6 Gen 3,,91mobiles (Oct 2026)
+Nothing,Phone (3a),24999,8,128,5000,50,50,32,6.77,Snapdragon 7s Gen 3,798022,91mobiles (Oct 2026)
+vivo,T3 Pro,24999,8,256,5500,80,50,16,6.77,Snapdragon 7 Gen 3,812119,91mobiles (Oct 2026)
+Motorola,Edge 60 Fusion,20900,8,128,5500,68,50,32,6.67,Dimensity 7400,692185,91mobiles (Oct 2026)
+POCO,X7 5G,19999,8,256,5500,45,,,,Dimensity 7300 Ultra,,smartprix (price differs on other sites)
+Samsung,Galaxy F17 5G,19499,6,128,5000,25,,,,Exynos 1330,,smartprix
+Samsung,Galaxy F70e 5G,18499,6,128,6000,25,,,,Dimensity 6300,,smartprix
+Ai+,Nova 2 Power 5G,16999,6,128,7000,33,,,6.75,Dimensity 7100,,smartprix
+vivo,T4X,16999,6,128,6500,44,50,8,6.72,Dimensity 7300,685052,91mobiles (Oct 2026)
+realme,P3 5G,15999,6,128,6000,45,,,6.67,Snapdragon 6 Gen 4,,smartprix + mysmartprice
+Infinix,Note 40X 5G,15999,12,256,5000,18,,,,Dimensity 6300,,smartprix
+HMD,Vibe 2 Pro 5G,14999,6,128,6000,33,64,13,,Dimensity 6300,,91mobiles + smartprix (Oct 2026)
+POCO,M7 Pro 5G,14999,6,128,5110,45,50,20,6.67,Dimensity 7025 Ultra,486435,91mobiles (Oct 2026)
+Moto,G64 5G,13999,8,128,6000,33,50,16,6.5,Dimensity 7025,497235,91mobiles (Oct 2026)
+realme,P1,13999,6,128,5000,45,50,16,6.67,Dimensity 7050,418175,91mobiles (Oct 2026)
+realme,P3x 5G,12999,6,128,6000,45,50,8,6.72,Dimensity 6400,414477,91mobiles (Oct 2026)
+Mivi,One 5G,12999,4,128,6000,18,50,8,6.75,Snapdragon 4 Gen 2,,91mobiles (Oct 2026)
+Samsung,Galaxy F16 5G,12499,4,128,5000,25,50,13,6.7,Dimensity 6300,,91mobiles (Oct 2026)
+Xiaomi,Redmi 14C,10894,6,128,5160,18,50,8,6.88,Snapdragon 4 Gen 2,438871,91mobiles (Oct 2026)
+realme,C63 5G,10999,6,128,5000,10,32,8,6.67,Dimensity 6300,,91mobiles (Oct 2026)
+POCO,C71,9999,6,128,5200,15,32,8,6.88,Unisoc T7250,265154,91mobiles (Oct 2026)
+Tecno,Pop 9,9799,4,128,5000,18,48,8,6.67,Dimensity 6300,,91mobiles (Oct 2026)
+Lava,Yuva 5G,8999,4,128,5000,18,50,8,6.52,Unisoc T750,,91mobiles (Oct 2026)
+boltt,Evo 4G,8999,4,64,6000,18,50,8,6.8,Unisoc T7250,495830,91mobiles (Oct 2026)
+Lava,Blaze 2,7989,6,128,5000,18,13,8,6.5,Unisoc T616,,91mobiles (Oct 2026)
