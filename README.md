@@ -109,9 +109,7 @@ docs/               Screenshots
 Python · Pandas · NumPy · scikit-learn · Altair · ReportLab · Streamlit · pytest · GitHub Actions
 
 ## Author
-**Rishi Mishra** · B.Tech Computer Science & Engineering, BPIT Rohini
-
-Built on the Machine Learning training project I did at Winnovation.
+**Rishi Mishra** ·
 
 ## License
 MIT, see [LICENSE](LICENSE).
