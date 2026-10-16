@@ -1,0 +1,49 @@
+{
+  "built_at": "2026-10-16 05:29",
+  "sklearn": "1.8.0",
+  "n_phones": 54,
+  "params": {
+    "learning_rate": 0.1,
+    "max_depth": 2,
+    "min_samples_leaf": 1,
+    "n_estimators": 250,
+    "subsample": 0.8,
+    "random_state": 42
+  },
+  "features": [
+    "ram_gb",
+    "storage_gb",
+    "battery_mah",
+    "charging_w",
+    "rear_mp",
+    "front_mp",
+    "antutu"
+  ],
+  "metrics": {
+    "r2": 0.7456048773958148,
+    "mae": 7088.907819622356,
+    "mape": 23.569476420114327,
+    "method": "nested 6-fold CV x2 with GridSearchCV",
+    "per_repeat": [
+      {
+        "r2": 0.7341617570896861,
+        "mae": 7157.041955656429,
+        "mape": 24.100110961195607
+      },
+      {
+        "r2": 0.7570479977019436,
+        "mae": 7020.773683588283,
+        "mape": 23.038841879033043
+      }
+    ],
+    "grid_cv_mae_log": 0.2265620342163642,
+    "conformal_coverage": 0.8333333333333334,
+    "quantile_coverage": 0.6296296296296297,
+    "default_loo": {
+      "r2": 0.7377107962907536,
+      "mae": 7273.666451735418
+    }
+  },
+  "conformal_halfwidth_factor": 1.3818870985847738,
+  "catalog_hash": "148f7e0eb9b0af09a7451ef27ad86bb3f60afd3f"
+}
