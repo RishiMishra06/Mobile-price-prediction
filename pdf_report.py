@@ -1,4 +1,8 @@
-"""PDF reports (reportlab). The ₹ sign is not in the standard PDF fonts, so prices are written as 'Rs.'."""
+"""PDF reports for SpecWorth (ReportLab).
+
+The rupee sign is not in the standard PDF fonts, so prices are written as 'Rs.'.
+Author: Rishi Mishra, BPIT Rohini.
+"""
 import io
 from datetime import date
 from xml.sax.saxutils import escape
@@ -67,8 +71,8 @@ def build_estimate_report(specs, est, low, high, segment, base, contrib, phones,
     st = _styles()
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=14 * mm,
-                            bottomMargin=14 * mm, title="Mobile price estimate", author="Mobile Price Predictor")
-    e = [_header(st, "Mobile Price Estimate", f"Generated {date.today():%d %b %Y} - Mobile Price Predictor"),
+                            bottomMargin=14 * mm, title="SpecWorth price estimate", author="SpecWorth")
+    e = [_header(st, "SpecWorth - Price Estimate", f"Generated {date.today():%d %b %Y} - Know what your phone is worth"),
          Spacer(1, 10), Paragraph("Estimated market price", st["h"]),
          Paragraph(rs(round(est, -2)), st["big"]),
          Paragraph(f"{segment} segment - 80% prediction interval {rs(round(low, -2))} to {rs(round(high, -2))}", st["p"]),
@@ -96,10 +100,10 @@ def build_compare_report(table_rows, picks, best_lines, winner):
     st = _styles()
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=14 * mm,
-                            bottomMargin=14 * mm, title="Phone comparison", author="Mobile Price Predictor")
+                            bottomMargin=14 * mm, title="SpecWorth phone comparison", author="SpecWorth")
     w0 = 42 * mm
     wn = (174 * mm - w0) / len(picks)
-    e = [_header(st, "Phone Comparison", f"Generated {date.today():%d %b %Y} - Mobile Price Predictor"), Spacer(1, 10),
+    e = [_header(st, "SpecWorth - Phone Comparison", f"Generated {date.today():%d %b %Y} - Know what your phone is worth"), Spacer(1, 10),
          _table([["Spec"] + picks] + table_rows, [w0] + [wn] * len(picks)), Spacer(1, 10),
          Paragraph("Highlights", st["h"])]
     e += [Paragraph(line, st["p"]) for line in best_lines]

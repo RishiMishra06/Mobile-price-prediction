@@ -1,3 +1,7 @@
+"""SpecWorth - ML-based smartphone price estimator and deal checker for the Indian market.
+
+Author: Rishi Mishra, B.Tech CSE, BPIT Rohini (Winnovation ML training project).
+"""
 from html import escape
 
 import altair as alt
@@ -16,7 +20,7 @@ import core
 import pdf_report
 from core import BOOL_COLS, LABELS, MARKET_FEATS, MARKET_NAMES, PRESETS, SPECS, TIER_NAMES, TOGGLES, fmt, inr, tier
 
-st.set_page_config(page_title="Mobile Price Predictor", page_icon="📱", layout="centered")
+st.set_page_config(page_title="SpecWorth", page_icon="📱", layout="centered")
 
 GRAD = {0: ("#16a34a", "#15803d"), 1: ("#2563eb", "#1d4ed8"), 2: ("#d97706", "#b45309"), 3: ("#dc2626", "#b91c1c")}
 VERDICT_COLORS = ["#15803d", "#16a34a", "#2563eb", "#d97706", "#dc2626"]
@@ -290,8 +294,8 @@ st.markdown(
     """
     <div class="hero">
         <div class="eyebrow">Machine Learning · Price Intelligence</div>
-        <h1>Mobile Price Predictor</h1>
-        <p>Estimate a phone's market price in India, check whether an offer is a good deal, and find the best phones for your budget.</p>
+        <h1>SpecWorth</h1>
+        <p>Know what your phone is worth. Estimate its market price in India, check whether an offer is a good deal, and find the best phones for your budget.</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -388,7 +392,7 @@ with tab_pred:
             )
             st.caption(f"Gradient Boosting trained on {M['n']} phones sold in India · {M['metrics']['method']}: "
                        f"average error {inr(M['metrics']['mae'])}, R² {M['metrics']['r2']:.2f}. Indicative, not a quote.")
-            st.download_button("📄 Download PDF report", res["pdf"], "price_estimate.pdf", "application/pdf",
+            st.download_button("📄 Download PDF report", res["pdf"], "specworth_estimate.pdf", "application/pdf",
                                use_container_width=True)
             if res["outside"]:
                 st.info("Beyond the phones in the catalog, so the estimate treats them as the catalog's limit: "
@@ -619,7 +623,7 @@ with tab_phones:
                     pdf_report.build_compare_report(
                         [[i] + [str(v) for v in comp_df.loc[i].tolist()] for i in comp_df.index], picks,
                         best, winner),
-                    "phone_comparison.pdf", "application/pdf")
+                    "specworth_comparison.pdf", "application/pdf")
 
                 sec("Score breakdown (0-100)")
                 st.bar_chart((sc_c[["perf", "batt", "cam", "disp", "cheap"]] * 100).rename(
@@ -878,7 +882,7 @@ with tab_batch:
 with tab_about:
     st.markdown(
         """
-        **Mobile Price Predictor**
+        **SpecWorth**
         Built during my 6-week Machine Learning training at Winnovation, then extended for the Indian market.
 
         **Two models**

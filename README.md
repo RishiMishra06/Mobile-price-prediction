@@ -1,13 +1,8 @@
-# Mobile Price Predictor
+# SpecWorth
 
-![tests](https://github.com/<your-username>/mobile-price-prediction/actions/workflows/tests.yml/badge.svg)
+*Know what your phone is worth.*
 
-A machine learning web app that estimates a smartphone's market price in India, tells you whether an offer is a good deal, and recommends the best phones for your budget. Built with Python, Scikit-learn and Streamlit.
-
-**Live demo:** <https://mobile-price-prediction-rm160206.streamlit.app/>
-
-<!-- Add 2-3 screenshots or a short GIF of the app here, for example:
-![Predict tab](docs/predict.png) -->
+SpecWorth is a machine learning web app that estimates a smartphone's market price in India, tells you whether an offer is a good deal, and recommends the best phones for your budget. Built with Python, Scikit-learn and Streamlit.
 
 ## Features
 | Area | What it does |
@@ -53,6 +48,7 @@ train_models.py     GridSearchCV + nested CV, saves market_model.joblib and mode
 phones.csv          Phone catalog
 train.csv           Kaggle dataset used by the classification model
 test_core.py        24 unit tests
+LICENSE             MIT
 ```
 
 ## Run locally

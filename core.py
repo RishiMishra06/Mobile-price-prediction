@@ -1,4 +1,8 @@
-"""Core logic for the Mobile Price Predictor (no Streamlit imports, so it can be unit tested)."""
+"""Core logic for SpecWorth: pricing model, ranking, Shapley explanations, EMI and deal checks.
+
+Kept free of Streamlit imports so it can be unit tested.
+Author: Rishi Mishra, BPIT Rohini.
+"""
 import hashlib
 import math
 import os
