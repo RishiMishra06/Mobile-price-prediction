@@ -4,7 +4,7 @@
 
 A machine learning web app that estimates a smartphone's market price in India, tells you whether an offer is a good deal, and recommends the best phones for your budget. Built with Python, Scikit-learn and Streamlit.
 
-**Live demo:** <add your Streamlit link here>
+**Live demo:** <https://mobile-price-prediction-rm160206.streamlit.app/>
 
 <!-- Add 2-3 screenshots or a short GIF of the app here, for example:
 ![Predict tab](docs/predict.png) -->
