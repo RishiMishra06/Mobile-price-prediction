@@ -122,8 +122,6 @@ Python · Pandas · NumPy · scikit-learn · Altair · ReportLab · Streamlit ·
 
 ## Author
 **Rishi Mishra**
-- B.Tech Computer Science and Engineering, BPIT Rohini
-- Built on the Machine Learning training project I did at Winnovation
 
 ## License
 MIT, see [LICENSE](LICENSE).
