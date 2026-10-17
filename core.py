@@ -64,6 +64,12 @@ BEST_PARAMS = dict(n_estimators=250, max_depth=2, learning_rate=0.1, min_samples
 PARAM_GRID = {"n_estimators": [100, 150, 250], "max_depth": [2, 3], "learning_rate": [0.03, 0.05, 0.1],
               "min_samples_leaf": [1, 3], "subsample": [1.0, 0.8]}
 COVERAGE = 0.8
+BUDGET_MAX = 300000     # upper end of the budget slider (the number boxes accept more)
+PRICE_MAX = 1000000     # largest price accepted in the deal checker and EMI calculator
+LISTED_BAND = (0.92, 1.08)  # "usual price" around a listed price: seller and offer variation
+# Real phones only ship with certain RAM / storage sizes, so +/- buttons and sliders snap to them
+SNAP_VALUES = {"ram_gb": [1, 2, 3, 4, 6, 8, 10, 12, 16, 18, 24],
+               "storage_gb": [8, 16, 32, 64, 128, 256, 512, 1024]}
 
 NUM_COLS = ["price_inr", "ram_gb", "storage_gb", "battery_mah", "charging_w", "rear_mp", "front_mp",
             "display_in", "antutu"]
@@ -122,7 +128,7 @@ def validate_catalog(cat):
 
 
 def catalog_hash(cat):
-    cols = [c for c in MARKET_FEATS + ["price_inr", "brand", "model"] if c in cat.columns]
+    cols = [c for c in MARKET_FEATS + ["price_inr", "brand", "model", "foldable"] if c in cat.columns]
     return hashlib.sha1(cat[cols].to_csv(index=False).encode()).hexdigest()
 
 
@@ -151,7 +157,9 @@ def score_catalog(cat, weights=None):
     d["cheap"] = 1 - nz(f["price_inr"])
 
     tot = sum(w.values()) or 1
-    d["score"] = 100 * sum(w[k] * d[k] for k in w) / tot
+    raw = sum(w[k] * d[k] for k in w) / tot
+    top = raw.max()
+    d["score"] = 100 * raw / top if top > 0 else 0.0  # 100 = best phone in the catalog for these priorities
 
     known = {"perf": pd.Series(True, index=d.index), "cheap": pd.Series(True, index=d.index),
              "batt": d["battery_mah"].notna(), "cam": d["rear_mp"].notna() & d["front_mp"].notna(),
@@ -234,6 +242,8 @@ def emi(price, down, months, annual_rate_pct):
 def deal_verdict(asking, est, low, high):
     """Compare an asking price with the model's estimate and its prediction interval."""
     diff = (asking / est - 1) * 100
+    if asking < low * 0.6:
+        return "Too good to be true", 5, diff
     if asking < low:
         return "Great deal", 0, diff
     if asking <= est * 0.95:
@@ -245,6 +255,41 @@ def deal_verdict(asking, est, low, high):
     return "Overpriced", 4, diff
 
 
+def listed_verdict(asking, listed):
+    """Compare an offer with the phone's known listed price (used for phones in the catalog)."""
+    r = asking / listed
+    diff = (r - 1) * 100
+    if r < 0.60:
+        return "Too good to be true", 5, diff
+    if r < 0.85:
+        return "Great deal", 0, diff
+    if r < LISTED_BAND[0]:
+        return "Good deal", 1, diff
+    if r <= LISTED_BAND[1]:
+        return "Fair price", 2, diff
+    if r <= 1.20:
+        return "Slightly expensive", 3, diff
+    return "Overpriced", 4, diff
+
+
+def snap_value(key, new, old=None):
+    """Snap a RAM / storage value to a size phones really come with.
+
+    A +/- button press moves exactly one step from the old value, so it goes to the neighbouring real size;
+    anything else (typing, dragging the slider) goes to the nearest real size."""
+    opts = SNAP_VALUES.get(key)
+    if not opts:
+        return new
+    new = min(max(new, opts[0]), opts[-1])
+    if new in opts:
+        return new
+    if old is not None and key in SPECS and abs(new - old) == SPECS[key][3]:
+        if new > old:
+            return next((o for o in opts if o > old), opts[-1])
+        return next((o for o in reversed(opts) if o < old), opts[0])
+    return min(opts, key=lambda o: abs(o - new))
+
+
 # ---------------------------------------------------------------- market price model
 def _market_frame(cat):
     d = cat.copy()
@@ -252,7 +297,10 @@ def _market_frame(cat):
         d["antutu"] = np.nan
     for c in MARKET_FEATS + ["price_inr"]:
         d[c] = pd.to_numeric(d[c], errors="coerce")
-    d = d.dropna(subset=["price_inr"]).reset_index(drop=True)
+    d = d.dropna(subset=["price_inr"])
+    if "foldable" in d.columns:  # the fold premium is not explained by specs, so folds are not used for training
+        d = d[pd.to_numeric(d["foldable"], errors="coerce").fillna(0) == 0]
+    d = d.reset_index(drop=True)
     d["name"] = d["brand"].astype(str) + " " + d["model"].astype(str)
     med = d[MARKET_FEATS].median()
     X = d[MARKET_FEATS].fillna(med)

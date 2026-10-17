@@ -1,11 +1,11 @@
 {
-  "built_at": "2026-10-16 05:29",
+  "built_at": "2026-10-17 05:39",
   "sklearn": "1.8.0",
-  "n_phones": 54,
+  "n_phones": 61,
   "params": {
     "learning_rate": 0.1,
-    "max_depth": 2,
-    "min_samples_leaf": 1,
+    "max_depth": 3,
+    "min_samples_leaf": 3,
     "n_estimators": 250,
     "subsample": 0.8,
     "random_state": 42
@@ -20,30 +20,30 @@
     "antutu"
   ],
   "metrics": {
-    "r2": 0.7456048773958148,
-    "mae": 7088.907819622356,
-    "mape": 23.569476420114327,
+    "r2": 0.8090580468504606,
+    "mae": 11994.878579882086,
+    "mape": 25.929029358659605,
     "method": "nested 6-fold CV x2 with GridSearchCV",
     "per_repeat": [
       {
-        "r2": 0.7341617570896861,
-        "mae": 7157.041955656429,
-        "mape": 24.100110961195607
+        "r2": 0.8104120105944772,
+        "mae": 11506.67075921028,
+        "mape": 25.32093412259616
       },
       {
-        "r2": 0.7570479977019436,
-        "mae": 7020.773683588283,
-        "mape": 23.038841879033043
+        "r2": 0.8077040831064439,
+        "mae": 12483.086400553895,
+        "mape": 26.53712459472305
       }
     ],
-    "grid_cv_mae_log": 0.2265620342163642,
-    "conformal_coverage": 0.8333333333333334,
-    "quantile_coverage": 0.6296296296296297,
+    "grid_cv_mae_log": 0.19615183201291542,
+    "conformal_coverage": 0.819672131147541,
+    "quantile_coverage": 0.4918032786885246,
     "default_loo": {
-      "r2": 0.7377107962907536,
-      "mae": 7273.666451735418
+      "r2": 0.8372417330634268,
+      "mae": 9936.523468418087
     }
   },
-  "conformal_halfwidth_factor": 1.3818870985847738,
-  "catalog_hash": "148f7e0eb9b0af09a7451ef27ad86bb3f60afd3f"
+  "conformal_halfwidth_factor": 1.4157401986072442,
+  "catalog_hash": "343ca2840a5e428347a9788737f4add90063098a"
 }

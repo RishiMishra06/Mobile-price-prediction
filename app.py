@@ -23,7 +23,7 @@ from core import BOOL_COLS, LABELS, MARKET_FEATS, MARKET_NAMES, PRESETS, SPECS, 
 st.set_page_config(page_title="SpecWorth", page_icon="📱", layout="centered")
 
 GRAD = {0: ("#16a34a", "#15803d"), 1: ("#2563eb", "#1d4ed8"), 2: ("#d97706", "#b45309"), 3: ("#dc2626", "#b91c1c")}
-VERDICT_COLORS = ["#15803d", "#16a34a", "#2563eb", "#d97706", "#dc2626"]
+VERDICT_COLORS = ["#15803d", "#16a34a", "#2563eb", "#d97706", "#dc2626", "#7c3aed"]
 W_KEYS = {"perf": "w_perf", "batt": "w_batt", "cam": "w_cam", "disp": "w_disp", "cheap": "w_price"}
 FRIENDLY = {"battery_power": "Battery", "ram": "RAM", "int_memory": "Storage", "clock_speed": "Clock speed",
             "px_height": "Screen height (px)", "px_width": "Screen width (px)", "fc": "Front camera",
@@ -58,6 +58,10 @@ st.markdown(
     div.stButton > button[kind="primary"]:hover {background: #4338ca; color: #fff;}
     div[data-testid="stExpander"] {border-radius: 14px;}
     div[data-testid="stVerticalBlockBorderWrapper"] {border-radius: 14px;}
+    div[data-testid="stNumberInput"] button {background: transparent !important; box-shadow: none !important;}
+    div[data-testid="stNumberInput"] button:hover {background: rgba(99,102,241,.14) !important;}
+    div[data-testid="stNumberInput"] button:focus, div[data-testid="stNumberInput"] button:active
+        {background: transparent !important; color: inherit !important; outline: none !important;}
 
     .result {border-radius: 20px; padding: 1.5rem 1.2rem; text-align: center; color: #fff; margin: .8rem 0 .4rem 0;
              box-shadow: 0 10px 28px rgba(0,0,0,.18);}
@@ -221,9 +225,28 @@ if "ram_gb" not in st.session_state:
 
 
 def _sync(key, src_):
-    v = st.session_state[f"{key}__{src_}"]
-    st.session_state[key] = v
-    st.session_state[f"{key}__{'n' if src_ == 's' else 's'}"] = v
+    v = core.snap_value(key, st.session_state[f"{key}__{src_}"], st.session_state[key])
+    for k in (key, f"{key}__s", f"{key}__n"):
+        st.session_state[k] = v
+
+
+st.session_state.setdefault("bud_rng", (15000, 40000))
+st.session_state.setdefault("bud_lo", 15000)
+st.session_state.setdefault("bud_hi", 40000)
+
+
+def _bud_from_slider():
+    lo, hi = st.session_state["bud_rng"]
+    st.session_state["bud_lo"], st.session_state["bud_hi"] = int(lo), int(hi)
+
+
+def _bud_from_boxes():
+    lo, hi = st.session_state["bud_lo"], st.session_state["bud_hi"]
+    if lo > hi:
+        lo, hi = hi, lo
+        st.session_state["bud_lo"], st.session_state["bud_hi"] = lo, hi
+    s_lo = max(5000, min(lo, core.BUDGET_MAX))
+    st.session_state["bud_rng"] = (s_lo, max(s_lo, min(hi, core.BUDGET_MAX)))
 
 
 def spec_input(key):
@@ -268,6 +291,8 @@ def toggle_wish(name):
 def phone_card(r, rank=None, ctx="x", caption=None):
     chips = [f"{fmt(r['ram_gb'])} GB RAM", f"{fmt(r['storage_gb'])} GB storage", f"{fmt(r['battery_mah'])} mAh",
              f"{fmt(r['charging_w'])} W", escape(str(r["chipset"]))]
+    if "foldable" in r and r["foldable"] == 1:
+        chips.insert(0, "Foldable")
     if "five_g" in r and r["five_g"] == 1:
         chips.insert(0, "5G")
     chips_html = "".join(f'<span class="chip">{c}</span>' for c in chips)
@@ -392,6 +417,8 @@ with tab_pred:
             )
             st.caption(f"Gradient Boosting trained on {M['n']} phones sold in India · {M['metrics']['method']}: "
                        f"average error {inr(M['metrics']['mae'])}, R² {M['metrics']['r2']:.2f}. Indicative, not a quote.")
+            st.caption("This estimate comes from specs only. Brand value (Apple, Samsung flagships) is not captured, "
+                       "so those phones usually sell for more.")
             st.download_button("📄 Download PDF report", res["pdf"], "specworth_estimate.pdf", "application/pdf",
                                use_container_width=True)
             if res["outside"]:
@@ -451,29 +478,34 @@ with tab_deal:
         st.info("The phone catalog is needed for the deal checker (phones.csv).")
     else:
         st.subheader("Is this a good deal?")
-        st.write("Enter the price you are being offered. The model compares it with what a phone with these specs usually costs.")
+        st.write("Enter the price you are being offered and see how it compares.")
         mode = st.radio("Which phone?", ["Pick from the catalog", "My specs from the Predict tab"], horizontal=True)
-        names = list(_cat["brand"].astype(str) + " " + _cat["model"].astype(str))
-        chosen, note = None, ""
+        full_names = _cat["brand"].astype(str) + " " + _cat["model"].astype(str)
+        names = list(full_names)
+        chosen, listed, is_fold = None, None, False
         if mode.startswith("Pick"):
-            chosen = st.selectbox("Phone", names, index=0)
+            default_i = names.index("Nothing Phone (3a)") if "Nothing Phone (3a)" in names else 0
+            chosen = st.selectbox("Phone", names, index=default_i)
+            row_c = _cat[full_names == chosen].iloc[0]
+            listed = float(row_c["price_inr"])
+            is_fold = bool(row_c.get("foldable", 0) == 1)
             hit = M["oof"][M["oof"]["name"] == chosen]
-            if len(hit):
-                est = float(hit["Predicted price"].iloc[0])
-                note = "Estimated by a model that was not trained on this phone, so it is a fair test."
-            else:
-                est = core.predict_price(M, _cat[(_cat["brand"].astype(str) + " " + _cat["model"].astype(str)) == chosen]
-                                         .rename(columns={}).iloc[0].reindex(MARKET_FEATS).to_dict())
-            listed = float(_cat[(_cat["brand"].astype(str) + " " + _cat["model"].astype(str)) == chosen]["price_inr"].iloc[0])
-            default_ask = int(listed)
+            est = (float(hit["Predicted price"].iloc[0]) if len(hit)
+                   else core.predict_price(M, row_c.reindex(MARKET_FEATS).to_dict()))
+            default_ask, ask_key = int(listed), f"ask_cat_{chosen}"
         else:
             est = core.predict_price(M, core.market_row(current_specs()))
-            default_ask = int(round(est, -2))
-            note = "Uses the specs currently set in the Predict tab."
+            default_ask, ask_key = int(round(est, -2)), f"ask_custom_{int(est // 1000)}"
         low, high = core.predict_interval(M, est)
-        asking = st.number_input("Price you are being offered (₹)", 1000, 500000, default_ask, step=500,
-                                 key=f"ask_{mode}_{chosen}")
-        label, level, diff = core.deal_verdict(asking, est, low, high)
+        asking = st.number_input("Price you are being offered (₹)", 1000, core.PRICE_MAX, default_ask, step=500,
+                                 key=ask_key)
+
+        if listed is not None:
+            label, level, diff = core.listed_verdict(asking, listed)
+            ref_text, band, center = f"the listed price of {inr(listed)}", (listed * core.LISTED_BAND[0], listed * core.LISTED_BAND[1]), listed
+        else:
+            label, level, diff = core.deal_verdict(asking, est, low, high)
+            ref_text, band, center = f"the model estimate of {inr(round(est, -2))}", (low, high), est
         color = VERDICT_COLORS[level]
         sign = "above" if diff >= 0 else "below"
         st.markdown(
@@ -481,27 +513,49 @@ with tab_deal:
             <div class="result" style="background:{color};">
                 <div class="eyebrow">Verdict</div>
                 <div class="price" style="font-size:2.1rem;">{label}</div>
-                <div class="sub">{inr(asking)} is {abs(diff):.0f}% {sign} the estimate of {inr(round(est, -2))}</div>
+                <div class="sub">{inr(asking)} is {abs(diff):.0f}% {sign} {ref_text}</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-        lo_v, hi_v = min(low, asking) * 0.85, max(high, asking) * 1.15
+        if level == 5:
+            st.warning("This is far below the usual price. Check that it is the same model, brand new (not refurbished "
+                       "or an older version), has a proper warranty and comes from a trusted seller.")
+        lo_v, hi_v = min(band[0], asking) * 0.8, max(band[1], asking) * 1.2
         pos = lambda x: (x - lo_v) / (hi_v - lo_v) * 100
         st.markdown(
             f"""
             <div class="gauge">
-              <div class="rng" style="left:{pos(low):.1f}%; width:{pos(high) - pos(low):.1f}%;"></div>
-              <div class="est" style="left:{pos(est):.1f}%;"></div>
+              <div class="rng" style="left:{pos(band[0]):.1f}%; width:{pos(band[1]) - pos(band[0]):.1f}%;"></div>
+              <div class="est" style="left:{pos(center):.1f}%;"></div>
               <div class="dot" style="left:{pos(asking):.1f}%; background:{color};"></div>
-              <div class="tag" style="left:{pos(low):.1f}%;">{inr(round(low, -2))}</div>
-              <div class="tag" style="left:{pos(high):.1f}%;">{inr(round(high, -2))}</div>
+              <div class="tag" style="left:{pos(band[0]):.1f}%;">{inr(round(band[0], -2))}</div>
+              <div class="tag" style="left:{pos(band[1]):.1f}%;">{inr(round(band[1], -2))}</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-        st.caption(f"Shaded = expected 80% price range, line = model estimate, dot = your offer. {note} "
-                   f"Typical error is about {inr(M['metrics']['mae'])}, so treat this as guidance, not a rule.")
+        if listed is not None:
+            st.caption("Shaded = usual price (listed price ±8% for seller and offer differences), line = listed price, "
+                       "dot = your offer. Listed prices are approximate (Oct 2026).")
+            sec("What the price model thinks")
+            if is_fold:
+                st.caption("Foldables are not part of the price model (the fold premium is not explained by specs), "
+                           "so only the listed price is used.")
+            else:
+                gap = (listed / est - 1) * 100
+                st.markdown(f"From its specs alone, the model estimates **{inr(round(est, -2))}** "
+                            f"(80% range {inr(round(low, -2))} - {inr(round(high, -2))}). The listed price is "
+                            f"{abs(gap):.0f}% {'above' if gap >= 0 else 'below'} that.")
+                if abs(gap) > 30:
+                    st.info("The model cannot see brand value, so for Apple and Samsung flagships it usually "
+                            "under-estimates. For this phone the listed price is the better benchmark.")
+                else:
+                    st.caption("The model and the listed price roughly agree.")
+        else:
+            st.caption(f"Shaded = expected 80% price range, line = model estimate, dot = your offer. Typical error is "
+                       f"about {inr(M['metrics']['mae'])}. The estimate uses specs only, so brand value (Apple, Samsung "
+                       "flagships) is not included and those phones usually cost more.")
 
         sc = core.score_catalog(_cat, weights())
         pool = sc[sc["price_inr"] <= asking]
@@ -518,7 +572,7 @@ with tab_deal:
         st.markdown("---")
         st.subheader("EMI calculator")
         e1, e2 = st.columns(2)
-        e_price = e1.number_input("Phone price (₹)", 1000, 500000, int(asking), step=500)
+        e_price = e1.number_input("Phone price (₹)", 1000, core.PRICE_MAX, int(asking), step=500)
         e_down = e2.number_input("Down payment (₹)", 0, int(e_price), 0, step=500)
         e3, e4 = st.columns(2)
         e_rate = e3.number_input("Interest rate (% per year)", 0.0, 40.0, 14.0, step=0.5)
@@ -547,7 +601,11 @@ with tab_phones:
 
         with t_rec:
             st.write("Tell me your budget and what matters most - I'll rank phones available in India.")
-            b_lo, b_hi = st.slider("Budget (₹)", 5000, 100000, (15000, 40000), step=1000)
+            st.slider("Budget (₹)", 5000, core.BUDGET_MAX, step=1000, key="bud_rng", on_change=_bud_from_slider)
+            bx1, bx2 = st.columns(2)
+            bx1.number_input("Minimum (₹)", 0, core.PRICE_MAX, step=1000, key="bud_lo", on_change=_bud_from_boxes)
+            bx2.number_input("Maximum (₹)", 0, core.PRICE_MAX, step=1000, key="bud_hi", on_change=_bud_from_boxes)
+            b_lo, b_hi = st.session_state["bud_lo"], st.session_state["bud_hi"]
             with st.expander("🔎 Filters"):
                 brands = st.multiselect("Brand", sorted(cat["brand"].astype(str).unique()))
                 f5g = st.toggle("5G only")
@@ -580,7 +638,8 @@ with tab_phones:
                         st.dataframe(show.rename(columns={"name": "Phone", "price_inr": "Price", "score": "Score"}),
                                      use_container_width=True, hide_index=True)
             st.caption("Score is spec-based: AnTuTu benchmark (where available), RAM, storage, battery, charging, camera MP, "
-                       "display size and price. Megapixels do not measure camera quality, so read reviews before buying.")
+                       "display size and price. 100 = the best phone in the catalog for your priorities. "
+                       "Megapixels do not measure camera quality, so read reviews before buying.")
 
         with t_cmp:
             picks = st.multiselect("Pick 2 or 3 phones to compare", names_all, default=names_all[:2],
@@ -710,12 +769,13 @@ with tab_phones:
                     dsp = f1.number_input("Display (inch)", 4.0, 8.5, 6.7, step=0.01)
                     ant = f2.number_input("AnTuTu score (0 = unknown)", 0, 4000000, 0, step=50000)
                     g5 = f1.checkbox("5G", value=True)
+                    fold = f2.checkbox("Foldable")
                     if st.form_submit_button("Add phone") and brand and model_name:
                         row_new = pd.DataFrame([dict(
                             brand=brand, model=model_name, price_inr=price, ram_gb=ram_g, storage_gb=sto_g,
                             battery_mah=bat, charging_w=chg, rear_mp=rmp, front_mp=fmp, display_in=dsp,
                             chipset=chip or "-", antutu=ant if ant > 0 else np.nan, source="added by me",
-                            five_g=int(g5), last_verified="session")])
+                            five_g=int(g5), foldable=int(fold), last_verified="session")])
                         st.session_state.catalog_override = pd.concat([cat, row_new], ignore_index=True)
                         st.rerun()
             st.caption("Sources: 91mobiles, mysmartprice and smartprix listings read in Oct 2026. Sites disagree on some prices - "
@@ -784,7 +844,7 @@ with tab_models:
             - **Hyperparameters (GridSearchCV):** {", ".join(f"{k}={v}" for k, v in M["params"].items() if k != "random_state")}
             - **Evaluation:** {mt['method']} · R² {mt['r2']:.2f} · MAE {inr(mt['mae'])} · {mt['mape']:.0f}% average error
             - **Prediction interval:** 80% conformal interval (± x{np.exp(M['conformal_q']):.2f}) from out-of-sample residuals
-            - **Trained on:** {M['n']} phones · built {M.get('built_at', '-')} · saved with joblib
+            - **Trained on:** {M['n']} phones (foldables are listed in the catalog but not used for training, because the fold premium is not explained by specs) · built {M.get('built_at', '-')} · saved with joblib
             """
         )
         if "default_loo" in mt:
@@ -899,8 +959,10 @@ with tab_about:
         **Other tools:** deal checker, EMI calculator, filters, similar phones, value-for-money chart, wishlist,
         PDF reports and batch estimates.
 
-        **Limits:** the catalog has about 54 phones with approximate Oct 2026 prices, so estimates are indicative
-        (see error figures in the Insights and Models tabs). The phone ranking is a separate, transparent spec-based score.
+        **Limits:** the catalog has about 60 phones with approximate Oct 2026 prices, so estimates are indicative
+        (see error figures in the Insights and Models tabs). The price model sees specs only, so brand value (Apple,
+        Samsung flagships) is not captured; for phones in the catalog the deal checker therefore compares offers with
+        the listed price. The phone ranking is a separate, transparent spec-based score.
 
         **Tech stack:** Python · Pandas · Scikit-learn · Altair · ReportLab · Streamlit
 

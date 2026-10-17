@@ -73,15 +73,39 @@ def test_deal_verdict_levels():
     assert core.deal_verdict(20500, est, low, high)[0] == "Fair price"
     assert core.deal_verdict(25000, est, low, high)[0] == "Slightly expensive"
     assert core.deal_verdict(30000, est, low, high)[0] == "Overpriced"
+    assert core.deal_verdict(5000, est, low, high)[0] == "Too good to be true"
     assert abs(core.deal_verdict(22000, est, low, high)[2] - 10.0) < 1e-9
+
+
+def test_offers_far_below_the_listed_price_are_flagged():
+    """An iPhone 17 is listed at about ₹82,900, so a ₹30,000 offer must never look like a good deal."""
+    assert core.listed_verdict(30000, 82900)[0] == "Too good to be true"
+    assert core.listed_verdict(82900, 82900)[0] == "Fair price"
+    assert core.listed_verdict(70000, 82900)[0] == "Great deal"
+    assert core.listed_verdict(75000, 82900)[0] == "Good deal"
+    assert core.listed_verdict(90000, 82900)[0] == "Slightly expensive"
+    assert core.listed_verdict(105000, 82900)[0] == "Overpriced"
+    assert abs(core.listed_verdict(41450, 82900)[2] + 50.0) < 1e-9  # half the listed price = 50% below
+
+
+def test_ram_and_storage_snap_to_real_sizes():
+    assert core.snap_value("ram_gb", 9, 8) == 10      # "+" from 8 GB goes to the next real size
+    assert core.snap_value("ram_gb", 7, 8) == 6       # "-" goes to the previous real size
+    assert core.snap_value("ram_gb", 14, 8) in (12, 16)  # typed or dragged -> nearest real size
+    assert core.snap_value("ram_gb", 40, 24) == 24    # clamped to the largest size
+    assert core.snap_value("storage_gb", 136, 128) == 256
+    assert core.snap_value("storage_gb", 120, 128) == 64
+    assert core.snap_value("storage_gb", 200, 128) == 256
+    assert core.snap_value("battery_mah", 5555, 5500) == 5555  # other specs are left alone
 
 
 # ------------------------------------------------------------------ catalog
 def test_catalog_is_valid():
     assert core.validate_catalog(CAT) == []
-    assert len(CAT) >= 50
+    assert len(CAT) >= 60
+    assert set(CAT["foldable"].unique()) <= {0, 1}
     assert set(CAT["five_g"].unique()) <= {0, 1}
-    assert CAT["price_inr"].between(5000, 200000).all()
+    assert CAT["price_inr"].between(5000, core.PRICE_MAX).all()
 
 
 def test_validate_catalog_catches_problems():
@@ -98,6 +122,8 @@ def test_presets_stay_within_slider_ranges():
         for key, (_, lo, hi, _) in core.SPECS.items():
             assert lo <= preset[key] <= hi, f"{name}: {key}={preset[key]} outside [{lo}, {hi}]"
         assert set(core.TOGGLES) <= set(preset)
+        assert preset["ram_gb"] in core.SNAP_VALUES["ram_gb"]
+        assert preset["storage_gb"] in core.SNAP_VALUES["storage_gb"]
 
 
 def test_ui_to_dataset_converts_units():
@@ -128,6 +154,7 @@ def test_weights_change_the_ranking():
 def test_scores_are_between_0_and_100_and_raw_values_are_kept():
     s = core.score_catalog(CAT)
     assert s["score"].between(0, 100).all()
+    assert abs(s["score"].max() - 100) < 1e-9  # 100 = the best phone for the chosen priorities
     missing = CAT["front_mp"].isna()
     assert s.loc[missing, "front_mp"].isna().all()  # imputation is only used for scoring
 
@@ -170,7 +197,7 @@ def test_value_table_sorted_and_complete():
 # ------------------------------------------------------------------ market model
 def test_market_model_quality_and_predictions():
     a = art()
-    assert a["n"] == len(CAT)
+    assert a["n"] == int((CAT["foldable"] == 0).sum())  # foldables are not used for training
     assert a["metrics"]["r2"] > 0.5
     flagship = core.market_row(core.PRESETS["Flagship"])
     budget = core.market_row(core.PRESETS["Budget"])
